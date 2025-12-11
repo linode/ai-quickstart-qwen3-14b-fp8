@@ -1,0 +1,55 @@
+services:
+
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+    restart: unless-stopped
+    shm_size: 8g
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - vllm_data:/root/.cache/huggingface
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+    command:
+      - Qwen/Qwen3-14B-FP8
+      - --kv-cache-dtype=fp8
+      - --gpu-memory-utilization=0.95
+      - --max-model-len=12288
+      - --max-num-seqs=4
+      - --trust-remote-code
+      - --enable-prompt-tokens-details
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-s", "http://localhost:8000/v1/models"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  #--------------------------------------------
+  # Open-WebUI
+  #--------------------------------------------
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    volumes:
+      - open_webui_data:/app/backend/data
+    environment:
+      - OPENAI_API_BASE_URL=http://vllm:8000/v1
+      - OPENAI_API_KEY=none
+      - ANONYMIZED_TELEMETRY=false
+
+volumes:
+  vllm_data:
+  open_webui_data:

@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.claude
+src/
+.python-version
+CLAUDE.md
+pyproject.toml
+.DS_Store
+.env
+
+# test output
+test/
+*.log
