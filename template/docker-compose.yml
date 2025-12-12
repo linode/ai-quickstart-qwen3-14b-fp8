@@ -9,17 +9,19 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - vllm_data:/root/.cache/huggingface
+      - ./configs:/usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/quantization/utils/configs
     environment:
       - HF_HOME=/root/.cache/huggingface
     command:
       - Qwen/Qwen3-14B-FP8
       - --kv-cache-dtype=fp8
       - --gpu-memory-utilization=0.95
-      - --max-model-len=12288
-      - --max-num-seqs=4
-      - --trust-remote-code
+      - --max-model-len=16384
+      - --max-num-seqs=1
       - --enable-prompt-tokens-details
-
+      # qwen3 supported max context length is 32k
+      # for 20GB VRAM with fp8 kv-cache, 16k context length is close to VRAM limit
+      # if you like more max num seqs, reduce max model len accordingly
     healthcheck:
       test: ["CMD", "curl", "-f", "-s", "http://localhost:8000/v1/models"]
       interval: 10s

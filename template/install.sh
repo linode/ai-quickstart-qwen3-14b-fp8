@@ -70,6 +70,26 @@ EOF
 systemctl daemon-reload
 systemctl enable ${PROJECT_NAME}.service
 
+# Create vLLM quantization config files for RTX 4000 Ada
+notify "📝 Creating vLLM quantization configs for RTX 4000 Ada..."
+mkdir -p /opt/${PROJECT_NAME}/configs
+
+# All 4 config files share the same tuned parameters for RTX 4000 Ada
+VLLM_CONFIG_CONTENT='{
+    "1": {"BLOCK_SIZE_M": 16, "BLOCK_SIZE_N": 32, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 16, "num_warps": 4, "num_stages": 2},
+    "8": {"BLOCK_SIZE_M": 32, "BLOCK_SIZE_N": 32, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 16, "num_warps": 4, "num_stages": 2},
+    "32": {"BLOCK_SIZE_M": 32, "BLOCK_SIZE_N": 64, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 16, "num_warps": 4, "num_stages": 2},
+    "128": {"BLOCK_SIZE_M": 64, "BLOCK_SIZE_N": 64, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 16, "num_warps": 4, "num_stages": 2},
+    "512": {"BLOCK_SIZE_M": 64, "BLOCK_SIZE_N": 64, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 32, "num_warps": 4, "num_stages": 2},
+    "1024": {"BLOCK_SIZE_M": 64, "BLOCK_SIZE_N": 64, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 32, "num_warps": 4, "num_stages": 2},
+    "2048": {"BLOCK_SIZE_M": 64, "BLOCK_SIZE_N": 64, "BLOCK_SIZE_K": 64, "GROUP_SIZE_M": 32, "num_warps": 4, "num_stages": 2}
+}'
+
+echo "$VLLM_CONFIG_CONTENT" > "/opt/${PROJECT_NAME}/configs/N=5120,K=5120,device_name=NVIDIA_RTX_4000_Ada_Generation,dtype=fp8_w8a8,block_shape=[128,128].json"
+echo "$VLLM_CONFIG_CONTENT" > "/opt/${PROJECT_NAME}/configs/N=7168,K=5120,device_name=NVIDIA_RTX_4000_Ada_Generation,dtype=fp8_w8a8,block_shape=[128,128].json"
+echo "$VLLM_CONFIG_CONTENT" > "/opt/${PROJECT_NAME}/configs/N=34816,K=5120,device_name=NVIDIA_RTX_4000_Ada_Generation,dtype=fp8_w8a8,block_shape=[128,128].json"
+echo "$VLLM_CONFIG_CONTENT" > "/opt/${PROJECT_NAME}/configs/N=5120,K=17408,device_name=NVIDIA_RTX_4000_Ada_Generation,dtype=fp8_w8a8,block_shape=[128,128].json"
+
 # Pull latest Docker images
 notify "⬇️ Downloading latest vLLM & OpenWebUI container images... (this may take 2 - 3 min)..."
 cd /opt/${PROJECT_NAME}
