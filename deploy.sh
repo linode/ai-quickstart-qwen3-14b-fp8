@@ -352,7 +352,8 @@ log_to_file "INFO" "API Request: POST /linode/instances"
 log_to_file "INFO" "Request payload: label=$INSTANCE_LABEL, region=$SELECTED_REGION, type=$SELECTED_TYPE, image=$UBUNTU_IMAGE"
 
 CREATE_RESPONSE=$(create_instance "$TOKEN" "$INSTANCE_LABEL" "$SELECTED_REGION" "$SELECTED_TYPE" \
-    "$UBUNTU_IMAGE" "$INSTANCE_PASSWORD" "$SSH_PUBLIC_KEY" "$USER_DATA_BASE64")
+    "$UBUNTU_IMAGE" "$INSTANCE_PASSWORD" "$SSH_PUBLIC_KEY" "$USER_DATA_BASE64" \
+    "[\"ai-quickstart\",\"${PROJECT_NAME}\"]")
 
 log_to_file "INFO" "API Response: $CREATE_RESPONSE"
 
