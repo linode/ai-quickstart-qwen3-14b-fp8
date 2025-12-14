@@ -45,7 +45,7 @@ _setup_required_files() {
     REMOTE_TEMP_DIR="${TMPDIR:-/tmp}/${PROJECT_NAME}-$$"
 
     QUICKSTART_TOOLS_PATH=$(_dl "$SCRIPT_DIR" "script/quickstart_tools.sh" "$TOOLS_RAW_BASE" "$REMOTE_TEMP_DIR") || { echo "ERROR: Failed to get quickstart_tools.sh" >&2; exit 1; }
-    local f; for f in cloud-init.yaml docker-compose.yml install.sh; do
+    local f; for f in cloud-init.yaml docker-compose.yml install.sh Caddyfile; do
         _dl "$SCRIPT_DIR" "template/$f" "$REPO_RAW_BASE" "$REMOTE_TEMP_DIR" >/dev/null || { echo "ERROR: Failed to get $f" >&2; exit 1; }
     done
     TEMPLATE_DIR="${SCRIPT_DIR}/template"; [ -d "$TEMPLATE_DIR" ] && [ -f "$TEMPLATE_DIR/cloud-init.yaml" ] || TEMPLATE_DIR="${REMOTE_TEMP_DIR}/template"
@@ -131,21 +131,11 @@ _error_exit_with_cleanup() {
 #==============================================================================
 show_banner
 
-print_msg "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-print_msg "$BOLD" "                AI Quickstart Qwen3-14B-FP8 LLM"
-print_msg "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+print_msg "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+print_msg "$BOLD" "          AI Quickstart Qwen3-14B-FP8 LLM"
+print_msg "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-print_msg "$YELLOW" "This script will:"
-echo "  • Ask you to authenticate with your Linode/Akamai Cloud account"
-echo "  • Deploy a fully configured GPU instance in your account with:"
-echo "    - Docker and Docker Compose"
-echo "    - NVIDIA drivers and Container Toolkit"
-echo "    - vLLM (LLM inference server)"
-echo "    - Pre-loaded model: Qwen/Qwen3-14B-FP8"
-echo "    - Open-WebUI (web interface)"
-echo ""
-print_msg "$GREEN" "Setup time: ~10-15 minutes"
-print_msg "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+print_msg "$YELLOW" "Deploys a GPU instance with vLLM, Open-WebUI, and Qwen3-14B-FP8 model (~10-15 min)"
 echo ""
 
 # before proceeding, ensure jq is installed
@@ -297,6 +287,12 @@ if [ ! -f "${TEMPLATE_DIR}/docker-compose.yml" ]; then
 fi
 DOCKER_COMPOSE_BASE64=$(base64 < "${TEMPLATE_DIR}/docker-compose.yml" | tr -d '\n')
 
+# Base64 encode Caddyfile
+if [ ! -f "${TEMPLATE_DIR}/Caddyfile" ]; then
+    error_exit "template/Caddyfile not found"
+fi
+CADDYFILE_BASE64=$(base64 < "${TEMPLATE_DIR}/Caddyfile" | tr -d '\n')
+
 # Base64 encode install.sh (need to add notify function)
 if [ ! -f "${TEMPLATE_DIR}/install.sh" ]; then
     error_exit "template/install.sh not found"
@@ -310,10 +306,11 @@ fi
 
 # Create temporary cloud-init file with replacements
 CLOUD_INIT_DATA=$(cat "${TEMPLATE_DIR}/cloud-init.yaml" | \
-    sed "s|PROJECT_NAME_PLACEHOLDER|${PROJECT_NAME}|g" | \
-    sed "s|INSTANCE_LABEL_PLACEHOLDER|${INSTANCE_LABEL}|g" | \
-    sed "s|DOCKER_COMPOSE_BASE64_CONTENT_PLACEHOLDER|${DOCKER_COMPOSE_BASE64}|g" | \
-    sed "s|INSTALL_SH_BASE64_CONTENT_PLACEHOLDER|${INSTALL_SH_BASE64}|g")
+    sed "s|_PROJECT_NAME_PLACEHOLDER_|${PROJECT_NAME}|g" | \
+    sed "s|_INSTANCE_LABEL_PLACEHOLDER_|${INSTANCE_LABEL}|g" | \
+    sed "s|_CADDYFILE_BASE64_CONTENT_PLACEHOLDER_|${CADDYFILE_BASE64}|g" | \
+    sed "s|_DOCKER_COMPOSE_BASE64_CONTENT_PLACEHOLDER_|${DOCKER_COMPOSE_BASE64}|g" | \
+    sed "s|_INSTALL_SH_BASE64_CONTENT_PLACEHOLDER_|${INSTALL_SH_BASE64}|g")
 
 #==============================================================================
 # Show Confirmation Prompt
@@ -483,9 +480,9 @@ scroll_up 8
 
 CONTAINER_CHECK=$(ssh "${SSH_OPTS[@]}" "root@${INSTANCE_IP}" "docker ps --format '{{.Names}}'" </dev/null 2>/dev/null || echo "")
 
-if echo "$CONTAINER_CHECK" | grep -q "vllm" && echo "$CONTAINER_CHECK" | grep -q "open-webui"; then
-    log_to_file "INFO" "Docker containers verified: vLLM and Open-WebUI running"
-    echo "Both vLLM and Open-WebUI containers are running"
+if echo "$CONTAINER_CHECK" | grep -q "vllm" && echo "$CONTAINER_CHECK" | grep -q "open-webui" && echo "$CONTAINER_CHECK" | grep -q "caddy"; then
+    log_to_file "INFO" "Docker containers verified: vLLM, Open-WebUI, and Caddy running"
+    echo "All containers are running (vLLM, Open-WebUI, Caddy)"
 else
     log_to_file "WARN" "Container check incomplete: $CONTAINER_CHECK"
     warn "Some containers may still be starting. Check manually with: docker ps"
@@ -501,7 +498,7 @@ while true; do
     ELAPSED_STR=$([ $ELAPSED -ge 60 ] && echo "$((ELAPSED / 60))m $((ELAPSED % 60))s" || echo "${ELAPSED}s")
     progress "$YELLOW" "Status: starting ... Elapsed: ${ELAPSED_STR}"
 
-    if [ "$(ssh "${SSH_OPTS[@]}" "root@${INSTANCE_IP}" "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/health" </dev/null 2>/dev/null || echo "000")" = "200" ]; then
+    if [ "$(ssh "${SSH_OPTS[@]}" "root@${INSTANCE_IP}" "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/health" </dev/null 2>/dev/null || echo "000")" = "200" ]; then
         log_to_file "INFO" "Open-WebUI health check passed in ${ELAPSED}s"
         progress "$NC" "Open-WebUI is ready (took ${ELAPSED_STR})"
         break
@@ -557,12 +554,8 @@ echo "   Region:         $SELECTED_REGION"
 echo "   Instance Type:  $SELECTED_TYPE"
 echo ""
 print_msg "$CYAN" "🔐 Access Credentials:"
-if [ -n "${NEW_KEY_PATH:-}" ]; then
-    echo "   SSH:         ssh -i ${NEW_KEY_PATH} root@${INSTANCE_IP}"
-    echo "   SSH Key:     ${NEW_KEY_PATH}"
-else
-    echo "   SSH:         ssh root@${INSTANCE_IP}"
-fi
+echo "   SSH:         ssh -i ${SSH_KEY_FILE} root@${INSTANCE_IP}"
+echo "   SSH Key:     ${SSH_KEY_FILE}"
 echo "   Password:    ${INSTANCE_PASSWORD}"
 echo ""
 print_msg "$CYAN" "📋 Execution Log:"
@@ -570,18 +563,19 @@ echo "   Log file:       $LOG_FILE"
 echo ""
 print_msg "$GREEN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+INSTANCE_IP_LABEL=$(echo "$INSTANCE_IP" | tr . -)
 print_msg "$YELLOW" "💡 Next Steps:"
-printf "   1. 🌐 Access Open-WebUI: ${CYAN}http://${INSTANCE_IP}:3000${NC}\n"
+printf "   1. 🌐 Access Open-WebUI: ${CYAN}https://${INSTANCE_IP_LABEL}.ip.linodeusercontent.com${NC}\n"
 echo "   2. Create admin user account (your account data is stored only on your instance)"
 echo "   3. Start chatting with the model running on your GPU instance !!"
 echo ""
 print_msg "$YELLOW" "📁 Check AI Stack Configuration:"
 printf "   Docker Compose: ${CYAN}/opt/${PROJECT_NAME}/docker-compose.yml${NC}\n"
-echo "   Services: vLLM (port 8000) + OpenWebUI (port 3000)"
+echo "   Services: Caddy (port 80/443) + vLLM (port 8000) + Open-WebUI (port 8080)"
 echo ""
 echo ""
 echo "🚀 Enjoy your AI Quickstart Qwen3-14B-FP8 on Akamai Cloud !!"
 echo ""
 echo ""
 log_to_file "INFO" "Deployment completed successfully"
-log_to_file "INFO" "Instance URL: http://${INSTANCE_IP}:3000"
+log_to_file "INFO" "Instance URL: https://${INSTANCE_IP_LABEL}.ip.linodeusercontent.com"

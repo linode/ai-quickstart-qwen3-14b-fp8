@@ -66,6 +66,11 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 
+# Update Caddyfile domain configuration
+notify "🌐 Configuring Caddy domain with public IP..."
+IP_LABEL=$(curl -s https://ipinfo.io/ip | tr . -)
+sed -i "s/_PUBLIC_IP_LABEL_PLACEHOLDER_/${IP_LABEL}/g" /opt/${PROJECT_NAME}/Caddyfile
+
 # Enable service (will start containers on boot)
 systemctl daemon-reload
 systemctl enable ${PROJECT_NAME}.service

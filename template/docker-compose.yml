@@ -1,5 +1,22 @@
 services:
 
+  #--------------------------------------------
+  # Caddy - Reverse Proxy with Auto HTTPS
+  #--------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - open-webui
+
   vllm:
     image: vllm/vllm-openai:latest
     container_name: vllm
@@ -44,7 +61,7 @@ services:
     container_name: open-webui
     restart: unless-stopped
     ports:
-      - "3000:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - open_webui_data:/app/backend/data
     environment:
@@ -53,5 +70,7 @@ services:
       - ANONYMIZED_TELEMETRY=false
 
 volumes:
+  caddy_data:
+  caddy_config:
   vllm_data:
   open_webui_data:

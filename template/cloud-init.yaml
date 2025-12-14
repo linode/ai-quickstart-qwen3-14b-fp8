@@ -1,7 +1,7 @@
 #cloud-config
 
 # Set hostname
-hostname: INSTANCE_LABEL_PLACEHOLDER
+hostname: _INSTANCE_LABEL_PLACEHOLDER_
 
 # Update system packages
 package_update: true
@@ -20,16 +20,21 @@ packages:
 
 # Files to write
 write_files:
-  - path: /opt/PROJECT_NAME_PLACEHOLDER/docker-compose.yml
+  - path: /opt/_PROJECT_NAME_PLACEHOLDER_/docker-compose.yml
     permissions: '0644'
     encoding: base64
-    content: DOCKER_COMPOSE_BASE64_CONTENT_PLACEHOLDER
+    content: _DOCKER_COMPOSE_BASE64_CONTENT_PLACEHOLDER_
 
-  - path: /opt/PROJECT_NAME_PLACEHOLDER/install.sh
+  - path: /opt/_PROJECT_NAME_PLACEHOLDER_/Caddyfile
+    permissions: '0644'
+    encoding: base64
+    content: _CADDYFILE_BASE64_CONTENT_PLACEHOLDER_
+
+  - path: /opt/_PROJECT_NAME_PLACEHOLDER_/install.sh
     permissions: '0755'
     encoding: base64
-    content: INSTALL_SH_BASE64_CONTENT_PLACEHOLDER
+    content: _INSTALL_SH_BASE64_CONTENT_PLACEHOLDER_
 
 # Run install script
 runcmd:
-  - bash /opt/PROJECT_NAME_PLACEHOLDER/install.sh
+  - bash /opt/_PROJECT_NAME_PLACEHOLDER_/install.sh

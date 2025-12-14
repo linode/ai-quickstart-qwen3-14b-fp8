@@ -14,14 +14,14 @@
       .storage-box { fill: #fce4ec; stroke: #e91e63; stroke-width: 2; }
       .systemd-box { fill: #f3e5f5; stroke: #9c27b0; stroke-width: 2; }
       .arrow { stroke: #7f8c8d; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
-      .arrow-green { stroke: #27ae60; stroke-width: 3; fill: none; marker-end: url(#arrowhead-green); }
+      .arrow-green { stroke: #27ae60; stroke-width: 2; fill: none; marker-end: url(#arrowhead-green); }
       .arrow-orange { stroke: #e67e22; stroke-width: 2; fill: none; marker-end: url(#arrowhead-orange); stroke-dasharray: 4,4; }
       .icon-text { font: bold 24px sans-serif; }
     </style>
     <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
       <polygon points="0 0, 10 3, 0 6" fill="#7f8c8d" />
     </marker>
-    <marker id="arrowhead-green" markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto">
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
       <polygon points="0 0, 10 3, 0 6" fill="#27ae60" />
     </marker>
     <marker id="arrowhead-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -35,7 +35,7 @@
 
   <!-- External User Access -->
   <rect x="150" y="140" width="600" height="40" class="box" rx="8" fill="#e8f5e9" stroke="#27ae60" stroke-width="3"/>
-  <text x="450" y="165" text-anchor="middle" class="label">👤 User Access: http://&lt;instance-ip&gt;:3000</text>
+  <text x="450" y="165" text-anchor="middle" class="label">👤 User Access: https://&lt;ip-label&gt;.ip.linodeusercontent.com</text>
 
   <!-- Container Layer -->
   <rect x="100" y="205" width="700" height="360" class="box" rx="8" stroke-dasharray="8,4" stroke-width="2"/>
@@ -47,25 +47,31 @@
   <text x="280" y="308" text-anchor="middle" class="small-label">🚀 High-Performance Inference Engine</text>
   <line x1="145" y1="318" x2="415" y2="318" stroke="#ff9800" stroke-width="1.5"/>
   <text x="280" y="338" text-anchor="middle" class="small-label">Port: 8000 (Internal Only)</text>
-  <text x="280" y="358" text-anchor="middle" class="small-label">Model: nvidia/NVIDIA-Nemotron-Nano-9B-v2</text>
+  <text x="280" y="358" text-anchor="middle" class="small-label">Model: Qwen/Qwen3-14B-FP8</text>
   <text x="280" y="378" text-anchor="middle" class="small-label">🔥 GPU-Accelerated</text>
   <text x="280" y="398" text-anchor="middle" class="small-label">OpenAI-Compatible API</text>
   <text x="280" y="418" text-anchor="middle" class="tiny-label">/v1/completions, /v1/chat/completions</text>
 
-  <!-- OpenWebUI Container -->
-  <rect x="470" y="255" width="300" height="180" class="service-box" rx="8"/>
-  <text x="620" y="283" text-anchor="middle" class="subtitle">OpenWebUI Container</text>
-  <text x="620" y="308" text-anchor="middle" class="small-label">💬 Web Chat Interface</text>
-  <line x1="485" y1="318" x2="755" y2="318" stroke="#ff9800" stroke-width="1.5"/>
-  <text x="620" y="338" text-anchor="middle" class="small-label">Port: 3000 (Public)</text>
-  <text x="620" y="358" text-anchor="middle" class="small-label">🌐 Internet Accessible</text>
-  <text x="620" y="378" text-anchor="middle" class="small-label">User-friendly chat UI</text>
-  <text x="620" y="398" text-anchor="middle" class="small-label">Connects to vLLM API</text>
+  <!-- Caddy Container -->
+  <rect x="470" y="255" width="300" height="90" class="service-box" rx="8"/>
+  <text x="620" y="280" text-anchor="middle" class="subtitle">Caddy Container</text>
+  <text x="620" y="300" text-anchor="middle" class="small-label">🔒 Reverse Proxy + Auto HTTPS</text>
+  <line x1="485" y1="308" x2="755" y2="308" stroke="#ff9800" stroke-width="1.5"/>
+  <text x="620" y="328" text-anchor="middle" class="small-label">Port: 80/443 (Public)</text>
 
-  <!-- Communication Arrow between containers -->
-  <path d="M 470 345 L 430 345" class="arrow-green"/>
-  <text x="450" y="335" text-anchor="middle" class="small-label" fill="#27ae60" font-weight="bold">HTTP</text>
-  <text x="450" y="365" text-anchor="middle" class="tiny-label" fill="#27ae60">Docker Network</text>
+  <!-- OpenWebUI Container -->
+  <rect x="470" y="355" width="300" height="80" class="service-box" rx="8"/>
+  <text x="620" y="378" text-anchor="middle" class="subtitle">OpenWebUI Container</text>
+  <text x="620" y="398" text-anchor="middle" class="small-label">💬 Web Chat Interface</text>
+  <line x1="485" y1="406" x2="755" y2="406" stroke="#ff9800" stroke-width="1.5"/>
+  <text x="620" y="423" text-anchor="middle" class="small-label">Port: 8080 (Internal)</text>
+
+  <!-- Arrow from Caddy to OpenWebUI -->
+  <path d="M 620 330 L 620 360" class="arrow-green"/>
+
+  <!-- Arrow from OpenWebUI to vLLM -->
+  <path d="M 470 395 L 430 395" class="arrow-green"/>
+  <text x="450" y="385" text-anchor="middle" class="small-label" fill="#27ae60" font-weight="bold">HTTP</text>
 
   <!-- Model Storage -->
   <rect x="130" y="460" width="300" height="85" class="storage-box" rx="8"/>
@@ -80,7 +86,7 @@
   <!-- Systemd Service -->
   <rect x="470" y="460" width="300" height="85" class="systemd-box" rx="8"/>
   <text x="620" y="485" text-anchor="middle" class="subtitle">⚙️ systemd Service</text>
-  <text x="620" y="508" text-anchor="middle" class="small-label">ai-quickstart-nvidia-nemotron-nano-9b-v2.service</text>
+  <text x="620" y="508" text-anchor="middle" class="small-label">ai-quickstart-qwen3-14b-fp8.service</text>
   <text x="620" y="528" text-anchor="middle" class="small-label">Auto-start on boot • Lifecycle management</text>
 
   <!-- Docker Platform -->
